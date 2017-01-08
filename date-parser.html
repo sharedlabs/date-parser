@@ -1,0 +1,112 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="date-parser">
+  <template>
+    <style>
+      :host {
+        display: inline;
+      }
+    </style>
+
+    <span id="date">[[value]]</span>
+
+  </template>
+</dom-module>
+
+<script>
+(function() {
+  'use strict';
+
+  if (!window.requestIdleCallback) {
+    window.requestIdleCallback = (func => func());
+  }
+
+  Polymer({
+
+    is: 'date-parser',
+
+    properties: {
+
+      date: {
+        type: String,
+        observer: '_dateChanged'
+      },
+
+      format: {
+        type: String,
+        value: 'time-ago',
+        observer: '_formatChanged'
+      },
+
+      value: String,
+
+      _updateTimeAgoInterval: Number
+
+    },
+
+    detached() {
+      this._clearUpdateTimeAgoInterval();
+    },
+
+    _updateValue() {
+      if (!this.date) {
+        this.value = '';
+        return;
+      }
+
+      const dateTime = new Date(this.date).getTime();
+
+      if (this.format === 'time-ago') {
+        this.value = this._getTimeAgo(dateTime);
+      }
+    },
+
+    _dateChanged() {
+      this._updateValue();
+    },
+
+    _formatChanged() {
+      if (this.format === 'time-ago' && !this._updateTimeAgoInterval) {
+        this._updateTimeAgoInterval = setInterval(_ => {
+          requestIdleCallback(this._updateValue.bind(this));
+        }, 1000);
+      } else {
+        this._clearUpdateTimeAgoInterval();
+      }
+    },
+
+    _clearUpdateTimeAgoInterval() {
+      clearInterval(this._updateTimeAgoInterval);
+      this._updateTimeAgoInterval = null;
+    },
+
+    _getTimeAgo(time) {
+      const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+      let interval = Math.floor(seconds / 31536000);
+
+      if (interval >= 1) {
+        return `${interval} year${interval === 1 ? '' : 's'} ago`;
+      }
+      interval = Math.floor(seconds / 2592000);
+      if (interval >= 1) {
+        return `${interval} month${interval === 1 ? '' : 's'} ago`;
+      }
+      interval = Math.floor(seconds / 86400);
+      if (interval >= 1) {
+        return `${interval} day${interval === 1 ? '' : 's'} ago`;
+      }
+      interval = Math.floor(seconds / 3600);
+      if (interval >= 1) {
+        return `${interval} hour${interval === 1 ? '' : 's'} ago`;
+      }
+      interval = Math.floor(seconds / 60);
+      if (interval >= 1) {
+        return `${interval} minute${interval === 1 ? '' : 's'} ago`;
+      }
+      return Math.floor(seconds) + ' seconds ago';
+    },
+
+  });
+
+}());
+</script>
