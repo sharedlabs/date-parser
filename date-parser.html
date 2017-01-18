@@ -38,6 +38,11 @@
         observer: '_formatChanged'
       },
 
+      updateSeconds: {
+        type: Boolean,
+        value: false,
+      },
+
       value: String,
 
       _updateTimeAgoInterval: Number
@@ -55,9 +60,17 @@
       }
 
       const dateTime = new Date(this.date).getTime();
+      const seconds = Math.max(0, Math.floor((Date.now() - dateTime) / 1000));
+
+      if (!this.updateSeconds) {
+        // Don't update every second
+        if (seconds < 60 && this.value) {
+          return;
+        }
+      }
 
       if (this.format === 'time-ago') {
-        this.value = this._getTimeAgo(dateTime);
+        this.value = this._getTimeAgo(seconds);
       }
     },
 
@@ -80,8 +93,7 @@
       this._updateTimeAgoInterval = null;
     },
 
-    _getTimeAgo(time) {
-      const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+    _getTimeAgo(seconds) {
       let interval = Math.floor(seconds / 31536000);
 
       if (interval >= 1) {
